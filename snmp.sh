@@ -23,43 +23,36 @@ for i in $ARGS; do
         if [ -n "$(echo ${i} | grep "^\-c")" ]; then CRITICAL=$(echo ${i} | cut -c 3-); if [ ! -n "${CRITICAL}" ]; then usage;fi;fi
 done
 
-
-if [ ! -d /tmp/tmp-control-wifi-check_2/${HOSTTARGET} ]; then mkdir -p /tmp/tmp-control-wifi-check_2/${HOSTTARGET}; fi
 TMPDIR="/tmp/tmp-check_ntp_nb_client/${HOSTTARGET}"
-# T-1 = 
+# If the directory does not exist, create it
+if [ ! -d "${TMPDIR}" ]; then mkdir -p ${TMPDIR};fi
+
+# If file does exist
 if [ -f $TMPDIR/check_ntp_nb_client_out.txt ]
-	then 
-previous=$(cat $TMPDIR/check_ntp_nb_client_out.txt)
-check_actual=$(snmpwalk -v 2c -c $COMMUNITY $HOSTTARGET -O 0qv 1.3.6.1.4.1.8955.1.8.2.3.0 | sed -e 's: "$:":g')
+then 
+	previous=$(cat $TMPDIR/check_ntp_nb_client_out.txt)
+	check_actual=$(snmpwalk -v 2c -c $COMMUNITY $HOSTTARGET -O 0qv 1.3.6.1.4.1.8955.1.8.2.3.0 | sed -e 's: "$:":g')
+	delta=$((check_actual-previous))
+	if [ "$delta" -lt "$CRITICAL" ]
+	then
+		echo "WARNING: less than critical limit $CRITICAL: $delta clients connected"
+		exit 1
+	elif [ "$delta" -lt "$WARNING" ]
+	then
+		echo "WARNING: less than warning limit $WARNING: $delta clients connected"
+		exit 1
+	else
+		echo "OK: $delta clients connected"
+		exit 0
+	fi
 else 
-snmpwalk -v 2c -c $COMMUNITY $HOSTTARGET -O 0qv 1.3.6.1.4.1.8955.1.8.2.3.0 | sed -e 's: "$:":g'	> $TMPDIR/check_ntp_nb_client_out.txt
-echo "OK: $LOAD number of $CONNECTEDAP Managed.  :$LOAD"
-exit 0
+	if check_actual=$(snmpwalk -v 2c -c "$COMMUNITY" "$HOSTTARGET" -O 0qv 1.3.6.1.4.1.8955.1.8.2.3.0 | sed -e 's: "$:":g')
+	then
+		echo "OK: 0 client connected"
+		echo "$check_actual" > "$TMPDIR/check_ntp_nb_client_out.txt"
+		exit 0
+	else
+		echo "CRITICAL: Can't get SNMP data"
+		exit 2
+	fi
 fi
-
-
-if [ "$(cat $TMPDIR/snmpwalk_out.txt | head -1)" = "" ]; then 
-	echo "CRITICAL: Interogation Controleur WIFI impossible."
-	rm -rf ${TMPDIR}
-	exit 2
-fi
-
-#LOAD=$(cat $TMPDIR/snmp_out.txt | grep "${CONNECTEDAP}" | wc -l)
-#LOAD=$(cat $TMPDIR/snmp_out.txt | grep "${CONNECTEDAP}" | sed -e 's:"::g' | tr '\n' ';')
-LOAD=$(cat "$TMPDIR/snmpwalk_out.txt")
-
-
-
-if [ "$LOAD" -lt "$CRITICAL" ]; then
-	echo "WARNING: less than $CRITICAL AP Managed:$LOAD  :$LIST"
-	rm -rf "${TMPDIR}"	
-	exit 1
-fi
-if [ "$LOAD" -gt "$WARNING" ]; then
-	echo "WARNING: More then $WARNING AP are currently Managed: $LOAD   :$LIST"
-	rm -rf "${TMPDIR}"
-	exit 1
-fi
-echo "OK: $LOAD number of $CONNECTEDAP Managed.  :$LOAD"
-rm -rf "${TMPDIR}"
-exit 0
