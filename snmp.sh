@@ -3,11 +3,11 @@
 export LANG="fr_FR.UTF-8"
 
 usage() {
-echo "Usage :check_ConnectedAP.sh
+echo "Usage :check_ntp_nb_client.sh
        -H Hostname to check
 	-C Community SNMP
-        -w Warning (mens maximun number of ConnectedAP) 
-        -c Critical (means minimum number of ConnectedAP)"
+        -w Warning (means maximun number of Clients) 
+        -c Critical (means minimum number of Clients)"
 exit2
 }
 
@@ -25,9 +25,18 @@ done
 
 
 if [ ! -d /tmp/tmp-control-wifi-check_2/${HOSTTARGET} ]; then mkdir -p /tmp/tmp-control-wifi-check_2/${HOSTTARGET}; fi
-TMPDIR="/tmp/tmp-control-wifi-check_2/${HOSTTARGET}"
+TMPDIR="/tmp/tmp-check_ntp_nb_client/${HOSTTARGET}"
+# T-1 = 
+if [ -f $TMPDIR/check_ntp_nb_client_out.txt ]
+	then 
+previous=$(cat $TMPDIR/check_ntp_nb_client_out.txt)
+check_actual=$(snmpwalk -v 2c -c $COMMUNITY $HOSTTARGET -O 0qv 1.3.6.1.4.1.8955.1.8.2.3.0 | sed -e 's: "$:":g')
+else 
+snmpwalk -v 2c -c $COMMUNITY $HOSTTARGET -O 0qv 1.3.6.1.4.1.8955.1.8.2.3.0 | sed -e 's: "$:":g'	> $TMPDIR/check_ntp_nb_client_out.txt
+echo "OK: $LOAD number of $CONNECTEDAP Managed.  :$LOAD"
+exit 0
+fi
 
-snmpwalk -v 2c -c $COMMUNITY $HOSTTARGET -O 0qv .1.3.6.1.4.1.45.7.3.1.2.1.7 | sed -e 's: "$:":g' > $TMPDIR/snmpwalk_out.txt
 
 if [ "$(cat $TMPDIR/snmpwalk_out.txt | head -1)" = "" ]; then 
 	echo "CRITICAL: Interogation Controleur WIFI impossible."
