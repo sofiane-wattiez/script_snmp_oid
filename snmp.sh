@@ -36,13 +36,16 @@ then
 	if [ "$delta" -lt "$CRITICAL" ]
 	then
 		echo "WARNING: less than critical limit $CRITICAL: $delta clients connected"
+		echo "$check_actual" > "$TMPDIR/check_ntp_nb_client_out.txt"
 		exit 1
 	elif [ "$delta" -lt "$WARNING" ]
 	then
 		echo "WARNING: less than warning limit $WARNING: $delta clients connected"
+		echo "$check_actual" > "$TMPDIR/check_ntp_nb_client_out.txt"
 		exit 1
 	else
 		echo "OK: $delta clients connected"
+		echo "$check_actual" > "$TMPDIR/check_ntp_nb_client_out.txt"
 		exit 0
 	fi
 else 
