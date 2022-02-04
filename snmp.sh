@@ -3,7 +3,7 @@
 export LANG="fr_FR.UTF-8"
 
 usage() {
-echo "Usage :check_ntp_nb_client.sh
+echo "Usage :check_ntp_gorgy_nb_client.sh
        -H Hostname to check
 	-C Community SNMP
         -w Warning (means maximun number of Clients) 
@@ -23,39 +23,39 @@ for i in $ARGS; do
         if echo "${i}" | grep -q "^\-c"; then CRITICAL=$(echo "${i}" | cut -c 3-); if [ -z "${CRITICAL}" ]; then usage;fi;fi
 done
 
-TMPDIR="/tmp/tmp-check_ntp_nb_client/${HOSTTARGET}"
+TMPDIR="/tmp/tmp-check_ntp_gorgy_nb_client/${HOSTTARGET}"
 # If the directory does not exist, create it
 if [ ! -d "${TMPDIR}" ]; then mkdir -p "${TMPDIR}";fi
 
 # If file does exist
-if [ -f "$TMPDIR/check_ntp_nb_client_out.txt" ]
+if [ -f "$TMPDIR/check_ntp_gorgy_nb_client_out.txt" ]
 then 
-	previous=$(cat "$TMPDIR/check_ntp_nb_client_out.txt")
+	previous=$(cat "$TMPDIR/check_ntp_gorgy_nb_client_out.txt")
 	check_actual=$(snmpwalk -v 2c -c "$COMMUNITY" "$HOSTTARGET" -O 0qv 1.3.6.1.4.1.8955.1.8.2.3.0 | sed -e 's: "$:":g')
 	delta=$((check_actual-previous))
-	if [ "$delta" -lt "$CRITICAL" ]
+	if [ "$delta" -ge "$CRITICAL" ]
 	then
-		echo "WARNING: less than critical limit $CRITICAL: $delta clients connected"
-		echo "$check_actual" > "$TMPDIR/check_ntp_nb_client_out.txt"
-		exit 1
-	elif [ "$delta" -lt "$WARNING" ]
+		echo "CRITICAL: less than critical limit $CRITICAL: $delta clients connected"
+		echo "$check_actual" > "$TMPDIR/check_ntp_gorgy_nb_client_out.txt"
+		exit 2
+	elif [ "$delta" -ge "$WARNING" ]
 	then
 		echo "WARNING: less than warning limit $WARNING: $delta clients connected"
-		echo "$check_actual" > "$TMPDIR/check_ntp_nb_client_out.txt"
+		echo "$check_actual" > "$TMPDIR/check_ntp_gorgy_nb_client_out.txt"
 		exit 1
 	else
 		echo "OK: $delta clients connected"
-		echo "$check_actual" > "$TMPDIR/check_ntp_nb_client_out.txt"
+		echo "$check_actual" > "$TMPDIR/check_ntp_gorgy_nb_client_out.txt"
 		exit 0
 	fi
 else 
 	if check_actual=$(snmpwalk -v 2c -c "$COMMUNITY" "$HOSTTARGET" -O 0qv 1.3.6.1.4.1.8955.1.8.2.3.0 | sed -e 's: "$:":g')
 	then
-		echo "OK: 0 client connected"
-		echo "$check_actual" > "$TMPDIR/check_ntp_nb_client_out.txt"
-		exit 0
+		echo "WARNING: waiting others values"
+		echo "$check_actual" > "$TMPDIR/check_ntp_gorgy_nb_client_out.txt"
+		exit 1
 	else
-		echo "CRITICAL: Can't get SNMP data"
-		exit 2
+		echo "UNKNOWN: Can't get SNMP data"
+		exit 3
 	fi
 fi
