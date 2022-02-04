@@ -8,7 +8,7 @@ echo "Usage :check_ntp_nb_client.sh
 	-C Community SNMP
         -w Warning (means maximun number of Clients) 
         -c Critical (means minimum number of Clients)"
-exit2
+exit 2
 }
 
 
