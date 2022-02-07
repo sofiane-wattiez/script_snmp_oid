@@ -33,18 +33,20 @@ then
 	previous=$(cat "$TMPDIR/check_ntp_gorgy_nb_client_out.txt")
 	check_actual=$(snmpwalk -v 2c -c "$COMMUNITY" "$HOSTTARGET" -O 0qv 1.3.6.1.4.1.8955.1.8.2.3.0 | sed -e 's: "$:":g')
 	delta=$((check_actual-previous))
+    perfdata="'perf_nb_client'=${delta}"
+
 	if [ "$delta" -ge "$CRITICAL" ]
 	then
-		echo "CRITICAL: less than critical limit $CRITICAL: $delta clients connected"
+		echo "CRITICAL: less than critical limit $CRITICAL: $delta clients connected |${perfdata}"
 		echo "$check_actual" > "$TMPDIR/check_ntp_gorgy_nb_client_out.txt"
 		exit 2
 	elif [ "$delta" -ge "$WARNING" ]
 	then
-		echo "WARNING: less than warning limit $WARNING: $delta clients connected"
+		echo "WARNING: less than warning limit $WARNING: $delta clients connected |${perfdata}"
 		echo "$check_actual" > "$TMPDIR/check_ntp_gorgy_nb_client_out.txt"
 		exit 1
 	else
-		echo "OK: $delta clients connected"
+		echo "OK: $delta clients connected |${perfdata}"
 		echo "$check_actual" > "$TMPDIR/check_ntp_gorgy_nb_client_out.txt"
 		exit 0
 	fi
